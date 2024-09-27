@@ -1,0 +1,255 @@
+---
+title: "7MA505 Assessment Markdown"
+author: '100709469'
+date: "2023-12-01"
+output: 
+  word_document:
+---  
+
+```{r setup, include=FALSE}
+par(mfrow=c(2,2))
+knitr::opts_chunk$set(echo = FALSE)
+```
+  
+  
+  
+### GAMING STUDY DATASET  
+  
+### QUESTION 1:
+#### ONE SAMPLE INDEPENDENT TEST\
+LOADING THE DATASET
+```{r echo=TRUE}
+gamers <- read.csv("C:\\Users\\Chuka\\OneDrive - University of Derby\\GamingStudy_data.csv")
+head(gamers, n = 2)
+```
+
+```{r EDA, echo=TRUE, warning=FALSE}
+age <- gamers$Age
+summary(age)
+length(age) 
+par(mfrow=c(2,2))
+hist(age, main = "Age Distribution")
+qqnorm(age)
+qqline(age)
+library(e1071)
+skewness(age)
+```
+
+#### ONE SAMPLE T.TEST WITH 99% CONFIDENCE LEVEL\
+
+```{r echo=TRUE}
+# CRITICAL INTERVALS FOR T.TEST
+qt(0.975, df = 13463)
+qt(0.025, df = 13463)
+
+test_1 <- t.test(age-35, conf.level = 0.99)
+print(test_1)
+```
+\
+TESTING FOR NORMALITY
+```{r Testing for Normality, echo=TRUE}
+library('nortest')
+ad.test(age)
+```
+
+#### WILCOXON SIGNED RANK TEST\
+
+```{r}
+test_1.1 <- wilcox.test(age, mu = 35, alternative = "two.sided",conf.int = TRUE)
+print(test_1.1)
+```
+\
+\
+
+### QUESTION 2:
+#### CHI SQUARE TEST\
+Data Pre-Processing    
+```{r echo=TRUE}
+subset_1 <- gamers[, c("Gender","GADE")]
+nrow(subset_1)
+GADE <- na.omit(subset_1)
+unique(GADE)
+nrow(GADE)
+GADE <- subset(GADE,Gender !="Other")
+nrow(GADE)
+```
+
+CREATING THE CONTINGENCY TABLE
+
+```{r echo=TRUE}
+#Regrouping the categorical data
+GADE$GADE <- ifelse(GADE$GADE %in% c("Very difficult","Extremely difficult"), "Impacting", 
+                    ifelse(GADE$GADE %in% c("Not difficult at all","Somewhat difficult"),"Not Impacting", GADE$GADE))
+
+GADE$Gender <- as.factor(GADE$Gender)
+GADE$GADE <- as.factor(GADE$GADE)
+
+xtabs(~ Gender + GADE, data = GADE)
+```
+
+#### CHI SQUARE TEST WITH 99% CONFIDENCE LEVEL\
+
+```{r echo=TRUE}
+# Critical region and Test
+test_data <- xtabs(~ Gender + GADE, data = GADE)
+critical_value <- qchisq(0.99, df = 1)
+print(critical_value)
+chi_test <- chisq.test(test_data)
+print(chi_test)
+# Expected value if outcome was not influenced by Gender 
+chi_test$expected
+# Actual observed outcome
+chi_test$observed
+```
+\
+\
+
+### QUESTION 3:  
+#### LOGISTIC REGRESSION\
+
+```{r Logistic regresion Data cleaning and Preparation, echo=TRUE}
+# Dropping columns with high percentage null values as well as rows with null values
+columns_drop <- c("S..No.","highestleague", "League")
+gamers2 <- gamers[, -which(names(gamers) %in% columns_drop)]
+nrow(gamers2)
+gamers2 <- na.omit(gamers2)
+nrow(gamers2)
+gamers2<- subset(gamers2, Gender != "Other")
+
+# Reordering dependent variable GAD_T to a binary outcome with margin of 5 to signify True
+gamers2$GAD_T <- ifelse(gamers2$GAD_T <= 5,"NEGATIVE","POSITIVE")
+gamers2$GAD_T <- as.factor(gamers2$GAD_T)
+gamers2$Gender <- as.factor(gamers2$Gender)
+```
+```{r}
+log_model <- glm(GAD_T ~ Hours  + streams + Narcissism + Gender + Age  + SWL_T + SPIN_T, data = gamers2, family = "binomial")
+summary(log_model)
+library(car)
+vif(log_model)
+```
+
+
+
+PLOT OF MODEL SHOWING PREDICTED VALUES OVER ACTUAL VALUES
+```{r warning=FALSE, echo=TRUE}
+predicted.data <- data.frame(probability.of.GAD = log_model$fitted.values, GAD_T = gamers2$GAD_T)
+predicted.data <- predicted.data[order(predicted.data$probability.of.GAD, decreasing = FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+library(ggplot2)
+library(cowplot)
+ggplot(data = predicted.data, aes(x = rank, y = probability.of.GAD)) + 
+  geom_point(aes(color = GAD_T), alpha = 1, shape = 4, stroke = 2) +
+  xlab("index") +
+  ylab("Predicted Probability Of Having GAD")
+
+```
+
+```{r Predict new values, echo=TRUE}
+new_values <- data.frame(Hours = 30, streams = 7, Narcissism = 4,  Gender = "Female", Age = 27,SWL_T = 6, SPIN_T = 4)
+predicted_logistic <- predict(log_model, newdata = new_values, type = "response")
+predicted_class <- predicted_logistic > 0.5
+
+print(predicted_logistic)
+print(predicted_class)
+```
+\
+\
+
+### QUESTION 4: 
+#### ANOVA\
+
+GROUPING COUNTRIES OF INTEREST INTO A DATA FRAME
+```{r echo=TRUE}
+# Data structure
+Test_countries_all <- (subset(gamers, Residence == "UK" | Residence ==  "Germany" | Residence == "Canada"))
+Test_countries <- Test_countries_all[, c("Age","Residence")]
+boxplot(Test_countries$Age ~ Test_countries$Residence)
+summary(Test_countries)
+```
+
+
+TESTING FOR EQUAL VARIANCES CONDITION FOR ANOVA TEST
+```{r echo=TRUE}
+variance_test <- bartlett.test(Test_countries$Age ~ Test_countries$Residence, data = Test_countries)
+print(variance_test)
+```
+
+ANOVA TEST WITH 95% CONFIDENCE LEVEL
+```{r echo=TRUE}
+test_3 <- oneway.test(Test_countries$Age ~ Test_countries$Residence, var.equal = TRUE)
+print(test_3)
+
+# Test for which mean is different in the group 
+pairwise.wilcox.test(Test_countries$Age, Test_countries$Residence, p.adj = "bonferroni", exact = F)
+```
+\
+\
+
+### US BASKETBALL PLAYERS VALUATION DATASET
+### QUESTION 5:
+ #### LINEAR REGRESSION\
+
+LOADING THE DATASET
+```{r}
+nba <- read.csv("C:\\Users\\Chuka\\Desktop\\nba_salaries.csv")
+head(nba, n=2)
+```
+
+
+```{r clean data and remove na}
+nba <- na.omit(nba)
+
+```
+
+BUILDING THE LINEAR MODEL
+```{r Buliding the model, echo=TRUE}
+model_1 <- lm(Salary ~ Age+GP	+GS	+MP	+FG	+FGA	+FG.	+X3P	+X3PA	+X3P.	+X2P	+X2PA	+X2P.	+eFG.	+FT	+FTA	+FT.	+ORB	+DRB	+TRB	+AST	+STL	+BLK	+TOV	+PF	+PTS, data = nba)
+summary(model_1)
+```
+
+CHECKING FOR MULTI-COLLINEARITY OF THE DEPENDENT VARIABLES IN THE MODEL
+```{r warning=FALSE, echo=TRUE}
+vif(model_1)
+```
+
+REMOVE VARIABLES WITH MULTI-COLLINEARITY
+```{r Second Model, echo=TRUE}
+model_1.1 <- lm(Salary ~ Age+GP	+GS	+X3P.	+X2P.	+FT.	+AST	+STL	+BLK	+TOV	+PF	, data = nba)
+summary(model_1.1)
+vif(model_1.1)
+```
+
+REGARDLESS OF LOW VIF VALUES WHICH SIGNIFY LOW COLLINEARITY WE GO AHEAD TO ATTEMPT TO MAKE A STRONGER MODEL BY FURTHER ELIMINATING VARIABLES WITH LEAST SIGNIFICANCE FROM THE MODEL
+
+
+```{r final Model, echo=TRUE}
+model_1.2 <- lm(Salary ~ Age	+GS	+BLK	+TOV	+PF	, data = nba)
+summary(model_1.2)
+vif(model_1.2)
+par(mfrow=c(2,2))
+plot(model_1.2)
+```
+In summary, the linear regression model_1.2 with an F-statistic of 137.4 performs better than the first two models with lower F-statistic values of 33.52 and 62.42 .
+
+
+PLOTS TO HIGHLIGHT LINEARITY OF FINAL PREDICTOR VARIABLES
+```{r echo=TRUE}
+Salary <- nba[,c("Salary")]
+par(mfrow=c(2,2))
+for (var in c("Age", "GS", "BLK", "TOV", "PF")) {
+  plot(nba[[var]], nba$Salary, main = paste("Scatterplot of Salary vs", var),
+       xlab = var, ylab = "Salary")
+  abline(lm(Salary ~ nba[[var]]), col = "red")
+}
+```
+
+TESTING MODEL WITH NEW INDEPENDENT VARIABLE VALUES
+```{r echo=TRUE}
+new_GS <- data.frame(Age = 40, GS = 30, BLK = 0.5, TOV = 1.5, PF = 1.1)
+predict(model_1.2, new_GS, interval = "predict", level = 0.95)
+
+
+```
+
+
+
