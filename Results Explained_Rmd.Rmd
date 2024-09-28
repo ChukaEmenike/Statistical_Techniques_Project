@@ -1,5 +1,6 @@
 ---
-title: "7MA505 STATISTICAL TECHNIQUES ASSESSMENT BY 100709469"
+title: "Statistical Techniques Project"
+author: 'Chuke.E'
 output: 
   word_document:
 ---

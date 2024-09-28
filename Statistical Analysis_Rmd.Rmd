@@ -1,6 +1,6 @@
 ---
-title: "7MA505 Assessment Markdown"
-author: '100709469'
+title: "Statistical Techniques Project"
+author: 'Chuke.E'
 date: "2023-12-01"
 output: 
   word_document:
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = FALSE)
 #### ONE SAMPLE INDEPENDENT TEST\
 LOADING THE DATASET
 ```{r echo=TRUE}
-gamers <- read.csv("C:\\Users\\Chuka\\OneDrive - University of Derby\\GamingStudy_data.csv")
+gamers <- read.csv("GamingStudy_data.csv")
 head(gamers, n = 2)
 ```
 
