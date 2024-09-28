@@ -1,11 +1,8 @@
 # Statistical_Techniques_Project
 
 ### 1.0.    INTRODUCTION
-Statistical Analysis is the process of collecting, analyzing and presenting data to draw meaningful interpretation and conclusions. Inferential statistical techniques such as hypothesis testing with confidence levels is an essential method for making predictions and inferences of a larger population from a sample.
-This portfolio aims is to employ such statistical hypothesis tests and concepts to investigate and answer some typical world problems as well as outline ethical consequences of process. 
+This portfolio aims is to employ statistical hypothesis tests and concepts to investigate and answer some typical world problems as well as outline ethical consequences of process. 
 
-### 2.0. SUMMARY REPORT
-This report part provides a breakdown of steps for each statistical test and technique employed to answer questions and the inferred conclusions reached following the dataset analysis.
 
 All hypothesis tests covered will take three parts:\
 A.	Two competing claims about a population (The null hypothesis or H~O~ and the alternative hypothesis or H~1~)\
